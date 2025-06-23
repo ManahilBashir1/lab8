@@ -1,0 +1,161 @@
+//product-model page
+
+class Product {
+  final int id;
+  final String name;
+  final String image;
+  final double price;
+
+  Product({
+    required this.id,
+    required this.name,
+    required this.image,
+    required this.price,
+  });
+}
+
+//cart_controller page
+
+import 'package:get/get.dart';
+import '../models/product.dart';
+
+class CartController extends GetxController {
+  var cartItems = <Product>[].obs;
+  double get totalPrice => cartItems.fold(0, (sum, item) => sum + item.price);
+
+  void addToCart(Product product) {
+    cartItems.add(product);
+  }
+
+  void removeFromCart(Product product) {
+    cartItems.remove(product);
+  }
+}
+
+// main-dart file code 
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'controllers/cart_controller.dart';
+import 'models/product.dart';
+import 'pages/cart_page.dart';
+import 'pages/products_page.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  final CartController cartController = Get.put(CartController());
+
+  @override
+  Widget build(BuildContext context) {
+    return GetMaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'GetX Shopping Cart',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: ProductsPage(),
+      getPages: [
+        GetPage(name: '/products', page: () => ProductsPage()),
+        GetPage(name: '/cart', page: () => CartPage()),
+      ],
+    );
+  }
+}
+//products-page
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../controllers/cart_controller.dart';
+import '../models/product.dart';
+
+class ProductsPage extends StatelessWidget {
+  final CartController cartController = Get.find();
+  final List<Product> products = [
+    Product(id: 1, name: "Laptop", image: "💻", price: 999.99),
+    Product(id: 2, name: "Phone", image: "📱", price: 699.99),
+    Product(id: 3, name: "Headphones", image: "🎧", price: 149.99),
+    Product(id: 4, name: "Keyboard", image: "⌨️", price: 79.99),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Products"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.shopping_cart),
+            onPressed: () => Get.toNamed('/cart'),
+          ),
+          Obx(() => Text("${cartController.cartItems.length}")),
+        ],
+      ),
+      body: ListView.builder(
+        itemCount: products.length,
+        itemBuilder: (context, index) {
+          final product = products[index];
+          return ListTile(
+            leading: Text(product.image, style: TextStyle(fontSize: 30)),
+            title: Text(product.name),
+            subtitle: Text("\$${product.price.toStringAsFixed(2)}"),
+            trailing: IconButton(
+              icon: Icon(Icons.add_shopping_cart),
+              onPressed: () => cartController.addToCart(product),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+//cart_page
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../controllers/cart_controller.dart';
+
+class CartPage extends StatelessWidget {
+  final CartController cartController = Get.find();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Your Cart"),
+      ),
+      body: Obx(() => Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: cartController.cartItems.length,
+              itemBuilder: (context, index) {
+                final item = cartController.cartItems[index];
+                return ListTile(
+                  leading: Text(item.image, style: TextStyle(fontSize: 30)),
+                  title: Text(item.name),
+                  subtitle: Text("\$${item.price.toStringAsFixed(2)}"),
+                  trailing: IconButton(
+                    icon: Icon(Icons.remove_circle_outline),
+                    onPressed: () => cartController.removeFromCart(item),
+                  ),
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              "Total: \$${cartController.totalPrice.toStringAsFixed(2)}",
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      )),
+    );
+  }
+}
+
+
+
