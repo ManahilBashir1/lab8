@@ -1,0 +1,140 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+void main() {
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => TodoProvider(),
+      child: const MyApp(),
+    ),
+  );
+}
+
+// Todo Model
+class Todo {
+  final String id;
+  final String title;
+  bool isCompleted;
+
+  Todo({
+    required this.id,
+    required this.title,
+    this.isCompleted = false,
+  });
+}
+
+// Provider Class (Manages State)
+class TodoProvider with ChangeNotifier {
+  final List<Todo> _todos = [];
+
+  List<Todo> get todos => _todos;
+
+  void addTodo(String title) {
+    _todos.add(
+      Todo(
+        id: DateTime.now().toString(),
+        title: title,
+      ),
+    );
+    notifyListeners(); // Update UI
+  }
+
+  void toggleTodoStatus(String id) {
+    final todoIndex = _todos.indexWhere((todo) => todo.id == id);
+    if (todoIndex >= 0) {
+      _todos[todoIndex].isCompleted = !_todos[todoIndex].isCompleted;
+      notifyListeners();
+    }
+  }
+
+  void deleteTodo(String id) {
+    _todos.removeWhere((todo) => todo.id == id);
+    notifyListeners();
+  }
+}
+
+// Main App
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Todo App (Provider)',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+      ),
+      home: const TodoListScreen(),
+    );
+  }
+}
+
+// Todo List Screen
+class TodoListScreen extends StatelessWidget {
+  const TodoListScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final todoProvider = Provider.of<TodoProvider>(context);
+    final todos = todoProvider.todos;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Todo App (Provider)'),
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // Add Todo TextField
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Add a new task',
+                border: OutlineInputBorder(),
+              ),
+              onSubmitted: (value) {
+                if (value.trim().isNotEmpty) {
+                  todoProvider.addTodo(value.trim());
+                }
+              },
+            ),
+            const SizedBox(height: 20),
+            // Todo List
+            Expanded(
+              child: ListView.builder(
+                itemCount: todos.length,
+                itemBuilder: (context, index) {
+                  final todo = todos[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    child: ListTile(
+                      leading: Checkbox(
+                        value: todo.isCompleted,
+                        onChanged: (_) => todoProvider.toggleTodoStatus(todo.id),
+                      ),
+                      title: Text(
+                        todo.title,
+                        style: TextStyle(
+                          decoration: todo.isCompleted
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                        ),
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => todoProvider.deleteTodo(todo.id),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
